@@ -71,7 +71,55 @@ void checkDie(void)
 		player_status[i] = PLAYERSTATUS_DIE;
 	}
 }
+
+int game_end(void)
+{
+    int i;
+    int flag_end = 1;
+    // 플레이어가 모두 사망했는지 확인
+    for (i = 0; i < N_PLAYER; i++)
+    {
+        if (player_status[i] == PLAYERSTATUS_LIVE)
+        {
+            flag_end = 0;  // 살아있는 플레이어가 있다면 flag_end를 0으로 설정
+            break;
+        }
+    }
+    
+    	return flag_end;
+}
+   
+int getAlivePlayer(void)
+{
+    int i;
+    int cnt = 0;
+    for (i=0; i<N_PLAYER; i++)
+	{
+    	if (player_status[i] == PLAYERSTATUS_END)
+         cnt++;
+    }
+    return cnt;
+}
+   
+int getWinner(void)
+{
+    int i;
+    int winner = 0;
+    int max_coin = -1;
+      
+    for (i=0; i<N_PLAYER; i++)
+	{
+        if (player_coin[i] > max_coin)
+		{
+            max_coin = player_coin[i];
+            winner = i;
+        }
+    }
+    return winner;
+}
  
+ 
+
 int main(int argc, char *argv[])
 {
 	int pos = 0;
@@ -119,12 +167,6 @@ int main(int argc, char *argv[])
 		}
 			
 		pos += step;
-		
-		coinResult = board_getBoardCoin(pos);
-		printf("Press any key to continue:");
-    	scanf("%d", &c);
-    	fflush(stdin);
-      
     	printPlayerStatus();
 
 		//2-2. 주사위 던지기
@@ -147,8 +189,12 @@ int main(int argc, char *argv[])
     	printf("Die result: %i, Player %s moved to %i!\n", step, player_name[turn], player_position[turn]);
 
 		//2-4. 동전 줍기
-		coinResult = board_getBoardCoin(pos);
+		coinResult = board_getBoardCoin(player_position[turn]);
 		player_coin[turn] += coinResult;
+		
+		if(coinResult > 0)
+			printf("***************   LUCKY! Player %s got %i coin(s)!   ***************\n", player_name[turn], coinResult);
+		
 		
 		//2-5. 다음 턴 
 		turn = (turn + 1) % N_PLAYER; //wrap around, %N_PLAYER없으면 turn>player >> 오류남 
@@ -158,55 +204,23 @@ int main(int argc, char *argv[])
 		{
 			int shar_pos = board_stepShark();
 			checkDie();
-			printf("**WARNING** Shark moved to %i\n", shar_pos);
+			printf("****************   WARNING! Shark moved to %i!   *****************\n", shar_pos); // 상어 위치 알림 
 		}
-	} while(player_status[turn] == PLAYERSTATUS_LIVE);
+	} while(game_end() == 0);
 	
 	//3. 정리(승자 계산, 출력 등) 
-int game_end(void)
-{
-    int i;
-    int flag_end = 1;
-    // 플레이어가 모두 사망했는지 확인
-    for (i = 0; i < N_PLAYER; i++)
-    {
-        if (player_status[i] == PLAYERSTATUS_LIVE)
-        {
-            flag_end = 0;  // 살아있는 플레이어가 있다면 flag_end를 0으로 설정
-            break;
-        }
-    }
-    
-    	return flag_end;
-}
-   
-int getAlivePlayer(void)
-{
-    int i;
-    int cnt = 0;
-    for (i=0; i<N_PLAYER; i++)
+	int winner = getWinner(); // 승자의 인덱스 저장
+		int alivePlayers = getAlivePlayer(); // 생존한 플레이어 수 저장
+
+	printf("%d Players are alive. The Winner is %s.\n", alivePlayers, player_name[winner]);
+	for (i = 0; i < N_PLAYER; i++)
 	{
-    	if (player_status[i] == PLAYERSTATUS_END)
-         cnt++;
-    }
-    return cnt;
-}
-   
-int getWinner(void)
-{
-    int i;
-    int winner = 0;
-    int max_coin = -1;
-      
-    for (i=0; i<N_PLAYER; i++)
-	{
-        if (player_coin[i] > max_coin)
+    	if (player_status[i] == PLAYERSTATUS_LIVE)
 		{
-            max_coin = player_coin[i];
-            winner = i;
-        }
-    }
-    return winner;
-}
-   
+        	printf("%s is Alive.\n", player_name[i]);
+    	}
+	}
+
+return 0;
+
 }
